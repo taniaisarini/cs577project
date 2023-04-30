@@ -19,42 +19,32 @@ def category_to_num(category):
 
 
 class NewsDataset(Dataset):
-    def __init__(self, filename):
+    def __init__(self, filename, num_items = 1000):
         self.data = []
-        i = 0
+        self.num_items = num_items
         with open(filename) as f:
-            num = 1
             for line in f:
-                #  Start with few records
-                if i >= 20:
-                    break
-                i += 1
                 obj = json.loads(line)
-                self.data.append(obj)
-                if obj["category"] not in category_dict.keys():
-                    category_dict[obj["category"]] = num
-                    num += 1
-        # self.num_categories = num - 1
-        # TODO(me): remove this line
-        self.num_categories = 42
+                for item in obj:
+                    if (len(self.data) >= self.num_items):
+                        break
+                    self.data.append(item)
         self.glove_embs = api.load("glove-wiki-gigaword-50")
-        self.all_labels = []
+        self.output_size = 5
         self.news_emb = []
+        self.all_labels = []
         self.create_input()
 
     def __len__(self):
         return len(self.data)
 
-    # TODO(me): make this a pre-processing step, its too slow.
+    def __getitem__(self, item):
+        return self.news_emb[item], self.all_labels[item]
+
     def create_input(self):
         for item in range(len(self.data)):
             # Get news paragraphs
-            uf = urllib.request.urlopen(self.data[item]["link"])
-            html = uf.read()
-            soup = BeautifulSoup(html, features="html.parser")
-            para = ''
-            for data in soup.find_all("p"):
-                para = para + (data.get_text())
+            para = self.data[item]["text"]
 
             #  Convert to word embeddings
             x = torch.zeros(1, 50)
@@ -66,11 +56,8 @@ class NewsDataset(Dataset):
                 x = torch.cat((x, y), 0)
 
             # Get the news category
-            cat_num = category_to_num(self.data[item]["category"])
-            labels = torch.zeros(self.num_categories)
-            labels[cat_num] = 1
-            self.all_labels.append(labels)
             self.news_emb.append(x)
 
-    def __getitem__(self, item):
-        return self.all_labels[item], self.news_emb[item]
+            labels = torch.zeros(self.output_size)
+            labels[self.data[item]["bias"]] = 1
+            self.all_labels.append(labels)
