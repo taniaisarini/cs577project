@@ -2,10 +2,6 @@ import os
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 import utils
-import urllib
-from bs4 import BeautifulSoup
-import json
-import gensim.downloader as api
 from nn_arch import LSTM
 
 import torch
