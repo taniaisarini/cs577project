@@ -331,12 +331,14 @@ if __name__ == '__main__':
     test_y = label_test_df
 
     # dan
-    # dan_best_model = DAN_train(train_tfidf_x, train_y, 10, 0.001)
+    dan_best_model = DAN_train(train_tfidf_x, train_y, 10, 0.001)
+    torch.save(dan_best_model, "dan_best_model.pth")
 
     print(meanLength)
 
     # rnn
     rnn_best_model = RNN_train(train_int_x, train_y, 100, 0.0001, seqLength=meanLength, vocab_size=vocab_size)
+    torch.save(rnn_best_model, "rnn_best_model.pth")
 
 
 
