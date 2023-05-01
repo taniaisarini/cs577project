@@ -11,6 +11,8 @@ import gensim.downloader as api
 from nltk.corpus import wordnet as wn
 import nltk
 from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 category_dict = {}
 
@@ -29,7 +31,10 @@ class NewsDataset(Dataset):
                     if (len(self.data) >= self.num_items):
                         break
                     self.data.append(item)
+        self.text = []
+        self.preprocess()
         self.glove_embs = api.load("glove-wiki-gigaword-50")
+        self.input_len = 150
         self.output_size = 5
         self.news_emb = []
         self.all_labels = []
@@ -41,23 +46,46 @@ class NewsDataset(Dataset):
     def __getitem__(self, item):
         return self.news_emb[item], self.all_labels[item]
 
+    def preprocess(self):
+        max = 0
+        for item in range(len(self.data)):
+            # Get news paragraphs
+            para = self.remove_stop_words(self.data[item]["text"])
+            self.text.append(para)
+            if len(para) > max:
+                max = len(para)
+        self.input_len = max
+
+
     def create_input(self):
         for item in range(len(self.data)):
             # Get news paragraphs
-            para = self.data[item]["text"]
+            para = self.text[item]
+            i = 0
 
             #  Convert to word embeddings
             x = torch.zeros(1, 50)
-            for word in para.split(" "):
+            for word in para:
+                if i >= self.input_len:
+                    break
+                i += 1
                 try:
                     y = torch.tensor(None, self.glove_embs[word])
                 except:
                     y = torch.randn(1, 50)
                 x = torch.cat((x, y), 0)
+            if i < self.input_len:
+                y = torch.zeros(self.input_len - i, 50)
+                x = torch.cat((x, y), 0)
 
-            # Get the news category
             self.news_emb.append(x)
 
             labels = torch.zeros(self.output_size)
             labels[self.data[item]["bias"]] = 1
             self.all_labels.append(labels)
+
+    def remove_stop_words(self, text):
+        stop_words = set(stopwords.words('english'))
+        words = word_tokenize(text)
+        words = [w for w in words if not w.lower() in stop_words]
+        return words
