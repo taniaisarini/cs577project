@@ -13,8 +13,10 @@ import nltk
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import spacy
 
 category_dict = {}
+NER = spacy.load("en_core_web_lg")
 
 def category_to_num(category):
     return category_dict.get(category, 0)
@@ -83,10 +85,11 @@ class NewsDataset(Dataset):
                 max = len(para)
         self.input_len = max
 
-    def remove_stop_words(self, text):
-        words = word_tokenize(text)
-        words = [w for w in words if not w.lower() in self.stop_words]
-        return words
+    def distill(self, text):
+        # words = word_tokenize(text)
+        # words = [w for w in words if not w.lower() in self.stop_words]
+        # return words
+        return NER(text).ents
 
     def __getitem__(self, item):
         return self.all_labels[item], self.news_emb[item]

@@ -1,20 +1,17 @@
-import numpy as np
 from torch.utils.data import Dataset
 import torch
 import json
-import urllib
-import csv
-import pandas as pd
 from nltk.stem import *
-from nltk.wsd import lesk
 import gensim.downloader as api
-from nltk.corpus import wordnet as wn
-import nltk
-from bs4 import BeautifulSoup
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+import spacy
+from spacy import displacy
+
 
 category_dict = {}
+
+# make sure to run: spacy download en_core_web_lg
+NER = spacy.load("en_core_web_lg")
+categories = {}
 
 def category_to_num(category):
     return category_dict.get(category, 0)
@@ -30,12 +27,13 @@ class NewsDataset(Dataset):
                 for item in obj:
                     if (len(self.data) >= self.num_items):
                         break
-                    self.data.append(item)
+                    if item['hyperpartisan']:
+                        self.data.append(item)
         self.text = []
         self.preprocess()
         self.glove_embs = api.load("glove-wiki-gigaword-50")
         self.input_len = 150
-        self.output_size = 5
+        self.output_size = 2
         self.news_emb = []
         self.all_labels = []
         self.create_input()
@@ -50,7 +48,7 @@ class NewsDataset(Dataset):
         max = 0
         for item in range(len(self.data)):
             # Get news paragraphs
-            para = self.remove_stop_words(self.data[item]["text"])
+            para = self.distill(self.data[item]["text"])
             self.text.append(para)
             if len(para) > max:
                 max = len(para)
@@ -81,11 +79,15 @@ class NewsDataset(Dataset):
             self.news_emb.append(x)
 
             labels = torch.zeros(self.output_size)
-            labels[self.data[item]["bias"]] = 1
+            if self.data[item]['bias'] == 0:
+                labels[0] = 1
+            else:
+                labels[1] = 1
+
             self.all_labels.append(labels)
 
-    def remove_stop_words(self, text):
-        stop_words = set(stopwords.words('english'))
-        words = word_tokenize(text)
-        words = [w for w in words if not w.lower() in stop_words]
-        return words
+    def distill(self, text):
+        # stop_words = set(stopwords.words('english'))
+        # words = word_tokenize(text)
+        # words = [w for w in words if not w.lower() in stop_words]
+        return NER(text).ents

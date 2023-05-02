@@ -13,11 +13,10 @@ torch.use_deterministic_algorithms(True)
 torch.manual_seed(577)
 torch_device = torch.device("cpu")
 
-filename = 'News_Category_Dataset_v3.json'
 embedding_size_ = 50
-learning_rate_ = 0.0001
+learning_rate_ = 0.001
 batch_size_ = 20
-weight_decay_=1e-3
+weight_decay_=1e-10
 
 
 def accuracy(x, y):

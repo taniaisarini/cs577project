@@ -13,7 +13,7 @@ torch_device = torch.device("cpu")
 filename = 'News_Category_Dataset_v3.json'
 embedding_size_ = 50
 learning_rate_ = 0.01
-batch_size_ = 100
+batch_size_ = 5
 
 
 def accuracy(x, y):
@@ -56,14 +56,14 @@ def validate(model, loss, dataloader):
 
 def main():
     dataset = utils.NewsDataset('category_data.json')
-    train_set, val_set = torch.utils.data.random_split(dataset, [1000, 500])
-    dataloader = torch.utils.data.DataLoader(train_set, batch_size=batch_size_)
-    dataloader_val = torch.utils.data.DataLoader(val_set, batch_size=batch_size_)
+    train_set, val_set = torch.utils.data.random_split(dataset, [800, 700])
+    dataloader = torch.utils.data.DataLoader(train_set, batch_size=batch_size_, shuffle=True)
+    dataloader_val = torch.utils.data.DataLoader(val_set, batch_size=batch_size_, shuffle=True)
 
     model = LSTM(input_size=embedding_size_,
                  output_size=dataset.num_categories,
                  hidden_size=embedding_size_,
-                 num_layers=1,
+                 num_layers=5,
                  bidirectional=False,
                  num_epochs=1).to(torch_device)
 
