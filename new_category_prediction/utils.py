@@ -11,6 +11,8 @@ import gensim.downloader as api
 from nltk.corpus import wordnet as wn
 import nltk
 from bs4 import BeautifulSoup
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 
 category_dict = {}
 
@@ -21,23 +23,20 @@ def category_to_num(category):
 class NewsDataset(Dataset):
     def __init__(self, filename):
         self.data = []
-        i = 0
         with open(filename) as f:
-            num = 1
+            num = 0
             for line in f:
-                #  Start with few records
-                if i >= 20:
-                    break
-                i += 1
                 obj = json.loads(line)
                 self.data.append(obj)
                 if obj["category"] not in category_dict.keys():
                     category_dict[obj["category"]] = num
                     num += 1
-        # self.num_categories = num - 1
-        # TODO(me): remove this line
-        self.num_categories = 42
+        self.num_categories = num
+        self.input_len = 0
         self.glove_embs = api.load("glove-wiki-gigaword-50")
+        self.stop_words = set(stopwords.words('english'))
+        self.text = []
+        self.preprocess()
         self.all_labels = []
         self.news_emb = []
         self.create_input()
@@ -49,20 +48,22 @@ class NewsDataset(Dataset):
     def create_input(self):
         for item in range(len(self.data)):
             # Get news paragraphs
-            uf = urllib.request.urlopen(self.data[item]["link"])
-            html = uf.read()
-            soup = BeautifulSoup(html, features="html.parser")
-            para = ''
-            for data in soup.find_all("p"):
-                para = para + (data.get_text())
+            para = self.text[item]
+            i = 0
 
             #  Convert to word embeddings
             x = torch.zeros(1, 50)
-            for word in para.split(" "):
+            for word in para:
+                if i >= self.input_len:
+                    break
+                i += 1
                 try:
                     y = torch.tensor(None, self.glove_embs[word])
                 except:
                     y = torch.randn(1, 50)
+                x = torch.cat((x, y), 0)
+            if i < self.input_len:
+                y = torch.zeros(self.input_len - i, 50)
                 x = torch.cat((x, y), 0)
 
             # Get the news category
@@ -71,6 +72,21 @@ class NewsDataset(Dataset):
             labels[cat_num] = 1
             self.all_labels.append(labels)
             self.news_emb.append(x)
+
+    def preprocess(self):
+        max = 0
+        for item in range(len(self.data)):
+            # Get news paragraphs
+            para = self.remove_stop_words(self.data[item]["text"])
+            self.text.append(para)
+            if len(para) > max:
+                max = len(para)
+        self.input_len = max
+
+    def remove_stop_words(self, text):
+        words = word_tokenize(text)
+        words = [w for w in words if not w.lower() in self.stop_words]
+        return words
 
     def __getitem__(self, item):
         return self.all_labels[item], self.news_emb[item]

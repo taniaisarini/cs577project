@@ -85,7 +85,7 @@ def main():
     model = LSTM(input_size=embedding_size_,
                  output_size=dataset_train.output_size,
                  hidden_size=embedding_size_,
-                 num_layers=1,
+                 num_layers=5,
                  bidirectional=False,
                  num_epochs=1).to(torch_device)
 
