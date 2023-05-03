@@ -14,10 +14,14 @@ torch.manual_seed(577)
 torch_device = torch.device("cpu")
 
 embedding_size_ = 50
-learning_rate_ = 0.001
+learning_rate_ = 0.0001
 batch_size_ = 20
-weight_decay_=1e-10
+weight_decay_=1e-5
 
+a_fn_plt = 'output/NER/accuracy_decay_e-03.png'
+l_fn_plt = 'output/NER/loss_decay_e-03.png'
+a_fn_model = 'output/NER/best_model_accuracy_decay_e-03.pth'
+l_fn_model = 'output/NER/best_model_loss_decay_e-03.pth'
 
 def accuracy(x, y):
     count = 0
@@ -74,10 +78,10 @@ def data_dump():
 
 def main():
     # data_dump()
-    dataset_train = utils.NewsDataset('political_bias_data_train.json', 500)
+    dataset_train = utils.NewsDataset('cleaned_data_train.json', perform_NER=True)
     dataloader_train = torch.utils.data.DataLoader(dataset_train, batch_size=batch_size_,
                                                    shuffle=True)
-    dataset_val = utils.NewsDataset('political_bias_data_val.json', 500)
+    dataset_val = utils.NewsDataset('cleaned_data_val.json', perform_NER=True)
     dataloader_val = torch.utils.data.DataLoader(dataset_val, batch_size=batch_size_,
                                                  shuffle=True)
 
@@ -91,15 +95,40 @@ def main():
     loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate_,
                                  weight_decay=weight_decay_)
-    for epoch in range(500):
-        correct_train, train_loss = train(model, loss, optimizer, dataloader_train)
-        correct_val, val_loss = validate(model, loss, dataloader_val)
+    save_best_model = utils.SaveBestModel()
+
+    train_losses, val_losses = [], []
+    train_accuracies, val_accuracies = [], []
+    for epoch in range(200):
+        correct_train_raw, train_loss_raw = train(model, loss, optimizer, dataloader_train)
+        correct_val_raw, val_loss_raw = validate(model, loss, dataloader_val)
+
+        # Get losses and accuracies and save them
+        correct_train = correct_train_raw / dataset_train.__len__()
+        train_loss = train_loss_raw / dataset_train.__len__()
+        correct_val = correct_val_raw / dataset_val.__len__()
+        val_loss = val_loss_raw / dataset_val.__len__()
+        train_losses.append(train_loss)
+        val_losses.append(val_loss)
+        train_accuracies.append(correct_train)
+        val_accuracies.append(correct_val)
+
         if epoch % 20 == 0:
             print("******* epoch {} *******".format(epoch))
-            print("training accuracy: {}".format(correct_train / dataset_train.__len__()))
-            print("training loss: {}".format(train_loss / dataset_train.__len__()))
-            print("validation accuracy: {}".format(correct_val / dataset_val.__len__()))
-            print("validation loss: {}".format(val_loss / dataset_val.__len__()))
+            print("training accuracy: {}".format(correct_train))
+            print("training loss: {}".format(train_loss))
+            print("validation accuracy: {}".format(correct_val))
+            print("validation loss: {}".format(val_loss))
+        save_best_model(val_loss,
+                        correct_val,
+                        epoch,
+                        model,
+                        optimizer,
+                        loss,
+                        a_fn_model,
+                        l_fn_model)
+    utils.save_plots(train_accuracies, val_accuracies, train_losses, val_losses,
+                     a_fn_plt, l_fn_plt)
 
 
 if __name__ == "__main__":
