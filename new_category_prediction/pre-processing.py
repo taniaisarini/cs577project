@@ -17,18 +17,18 @@ top_categories = {
     'POLITICS': 0,
     'WELLNESS': 0,
 'ENTERTAINMENT': 0,
-'STYLE & BEAUTY': 0,
-'TRAVEL': 0,
-'PARENTING': 0,
-'HEALTHY LIVING': 0,
+# 'STYLE & BEAUTY': 0,
+# 'TRAVEL': 0,
+# 'PARENTING': 0,
+# 'HEALTHY LIVING': 0,
 'QUEER VOICES': 0,
 'FOOD & DRINK': 0,
 'BUSINESS': 0,
-'COMEDY': 0,
+# 'COMEDY': 0,
 'SPORTS': 0,
 'BLACK VOICES': 0,
-'HOME & LIVING': 0,
-'PARENTS': 0,
+# 'HOME & LIVING': 0,
+# 'PARENTS': 0,
 }
 
 
@@ -46,7 +46,7 @@ with open(filename) as f, open('category_data.json', 'a') as wf:
         new_obj = {}
         if obj["category"] in top_categories.keys():
             if top_categories[obj["category"]] < 100:
-                if total > 1500:
+                if total > len(top_categories) * 100:
                     break
                 total += 1
                 top_categories[obj["category"]] += 1

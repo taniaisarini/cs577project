@@ -23,7 +23,9 @@ def category_to_num(category):
 
 
 class NewsDataset(Dataset):
-    def __init__(self, filename, perform_NER = True):
+    def __init__(self, filename, perform_NER = True, use_twitter_classifier=False, DAN_df = None):
+        self.DAN_df = DAN_df
+        self.use_twitter_classifier = use_twitter_classifier
         self.perform_NER = perform_NER
         self.data = []
         with open(filename) as f:
@@ -44,7 +46,10 @@ class NewsDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, item):
-        return self.news_emb[item], self.all_labels[item]
+        if self.use_twitter_classifier:
+            return self.DAN_df[item], self.all_labels[item]
+        else:
+            return self.news_emb[item], self.all_labels[item]
 
     def preprocess(self):
         max = 0
