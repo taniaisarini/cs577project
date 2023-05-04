@@ -1,6 +1,10 @@
 from datasets import load_dataset
 import json
 import csv
+from nltk.sentiment import SentimentIntensityAnalyzer
+from nltk.sentiment import SentimentAnalyzer
+
+
 
 category_dict = {}
 num_hyperpartisan = {}
@@ -36,4 +40,12 @@ def data_dump():
     # with open("political_bias_data_val.json", 'w') as f:
     #     json.dump(data, f)
 
-data_dump()
+# data_dump()
+
+def nltk_sentiment():
+    sa = SentimentAnalyzer()
+    sia = SentimentIntensityAnalyzer()
+    print(sia.polarity_scores(text="I really love harry potter"))
+    print(sia.polarity_scores(text="I really hate 8 am finals"))
+
+nltk_sentiment()

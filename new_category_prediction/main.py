@@ -12,8 +12,8 @@ torch_device = torch.device("cpu")
 
 filename = 'News_Category_Dataset_v3.json'
 embedding_size_ = 50
-learning_rate_ = 0.01
-batch_size_ = 5
+learning_rate_ = 0.001
+batch_size_ = 50
 
 
 def accuracy(x, y):
@@ -56,7 +56,7 @@ def validate(model, loss, dataloader):
 
 def main():
     dataset = utils.NewsDataset('category_data.json')
-    train_set, val_set = torch.utils.data.random_split(dataset, [800, 700])
+    train_set, val_set = torch.utils.data.random_split(dataset, [600, 200])
     dataloader = torch.utils.data.DataLoader(train_set, batch_size=batch_size_, shuffle=True)
     dataloader_val = torch.utils.data.DataLoader(val_set, batch_size=batch_size_, shuffle=True)
 
@@ -69,7 +69,7 @@ def main():
 
     loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate_)
-    for epoch in range(1000):
+    for epoch in range(100):
         if epoch % 10 == 0:
             correct_train, train_loss = train(model, loss, optimizer, dataloader)
             correct_val, val_loss = validate(model, loss, dataloader_val)
