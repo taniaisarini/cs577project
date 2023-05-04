@@ -72,10 +72,8 @@ def label_processing(df):
     label_df = pd.DataFrame()
 
     dict_sentiment = {'NONE': 0,
-                     'AGAINST_BIDEN': 1,
-                      'FAVOR_TRUMP': 2,
-                      'AGAINST_TRUMP': 3,
-                      'FAVOR_BIDEN': 4,
+                     'REPUBLICAN': 1,
+                     'DEMOCRATS': 2
                      }
 
     label_df['label'] = [dict_sentiment[x] for x in df['stance']]
@@ -93,7 +91,7 @@ def DAN_train(train_x, train_y, epoch, lr):
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False)
 
-    model = DAN(vocab_size=train_x.shape[1], hidden_dim=250, output_size=5)
+    model = DAN(vocab_size=train_x.shape[1], hidden_dim=250, output_size=3)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     train_accuracy_list = []
@@ -167,7 +165,7 @@ def RNN_train(train_x, train_y, epoch, lr, seqLength, vocab_size):
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64, shuffle=False)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=64, shuffle=False)
 
-    model = RNN(vocab_size=vocab_size, hidden_dim=128, n_layer=1, bidirectional=True, output_size=5, seqLength=seqLength)
+    model = RNN(vocab_size=vocab_size, hidden_dim=128, n_layer=1, bidirectional=True, output_size=3, seqLength=seqLength)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     train_accuracy_list = []
@@ -287,12 +285,10 @@ def DataPreprocessing(clean_train_df, clean_test_df):
 
 if __name__ == '__main__':
     dict_sentiment = {'NONE': 0,
-                     'AGAINST_BIDEN': 1,
-                     'FAVOR_BIDEN': 2,
-                     'AGAINST_TRUMP': 3,
-                     'FAVOR_TRUMP': 4
+                     'REPUBLICAN': 1,
+                     'DEMOCRATS': 2
                      }
-    sentiment_list = ['NONE', 'AGAINST_BIDEN', 'FAVOR_BIDEN', 'AGAINST_TRUMP', 'FAVOR_TRUMP']
+    sentiment_list = ['NONE', 'REPUBLICAN', 'DEMOCRATS']
 
     biden_train_file = 'kawintiranon-stance-detection/biden_stance_train_public.csv'
     biden_test_file = 'kawintiranon-stance-detection/biden_stance_test_public.csv'
@@ -303,8 +299,8 @@ if __name__ == '__main__':
     biden_train_df = pd.read_csv(biden_train_file)
     biden_test_df = pd.read_csv(biden_test_file)
     biden_sentiment = {'NONE': 'NONE',
-                       'AGAINST': 'AGAINST_BIDEN',
-                       'FAVOR': 'FAVOR_BIDEN'
+                       'AGAINST': 'REPUBLICAN',
+                       'FAVOR': 'DEMOCRATS'
                        }
     biden_train_df['stance'] = [biden_sentiment[x] for x in biden_train_df['label']]
     biden_test_df['stance'] = [biden_sentiment[x] for x in biden_test_df['label']]
@@ -312,8 +308,8 @@ if __name__ == '__main__':
     trump_train_df = pd.read_csv(trump_train_file)
     trump_test_df = pd.read_csv(trump_test_file)
     trump_sentiment = {'NONE': 'NONE',
-                       'AGAINST': 'AGAINST_TRUMP',
-                       'FAVOR': 'FAVOR_TRUMP'
+                       'AGAINST': 'DEMOCRATS',
+                       'FAVOR': 'REPUBLICAN'
                        }
     trump_train_df['stance'] = [trump_sentiment[x] for x in trump_train_df['label']]
     trump_test_df['stance'] = [trump_sentiment[x] for x in trump_test_df['label']]
@@ -327,10 +323,10 @@ if __name__ == '__main__':
 
 
     # dan
-    total_dan = DAN_train(total_train_tfidf_x, total_train_y, 30, 0.001)
-    torch.save(total_dan, "label5_total_dan.pth")
+    total_dan = DAN_train(total_train_tfidf_x, total_train_y, 80, 0.00005)
+    torch.save(total_dan, "newLabel_total_dan.pth")
 
     # rnn
     total_rnn = RNN_train(total_train_int_x, total_train_y, 100, 0.0001, seqLength=25, vocab_size=total_vocab_size)
-    torch.save(total_rnn, "label5_total_rnn.pth")
+    torch.save(total_rnn, "newLabel_total_rnn.pth")
 
