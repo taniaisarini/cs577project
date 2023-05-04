@@ -1,8 +1,7 @@
 from torch.utils.data import Dataset
 
-import pandas as pd
 import numpy as np
-import nltk
+
 
 def token_to_int(tokens, dict_key):
     index_list=[]
@@ -29,6 +28,20 @@ class DAN_Dataset(Dataset):
         label = self.labels.iloc[idx, 0]
 
         sample = {'item': np.array(row), 'label': label}
+        return sample
+
+class DAN_Test_Dataset(Dataset):
+
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return self.data.shape[0]
+
+    def __getitem__(self, idx):
+        row = self.data.iloc[idx]
+
+        sample = np.array(row)
         return sample
 
 

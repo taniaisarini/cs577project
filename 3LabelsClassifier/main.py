@@ -8,6 +8,7 @@ import torch
 
 from neural_archs import DAN, RNN
 from utils import DAN_Dataset, token_to_int, RNN_Dataset
+from utilsAdditional import dan_predict
 
 torch.set_default_tensor_type(torch.FloatTensor)
 torch_device = torch.device("cpu")
@@ -277,9 +278,10 @@ def DataPreprocessing(clean_train_df, clean_test_df):
     int_test_df = int_tokenization(test_df, dict_index)
 
     tfidf_test_df = tfidf(test_df, dict_idf)
-    label_test_df = label_processing(train_df)
+    label_test_df = label_processing(test_df)
 
     return tfidf_df, int_df, label_train_df, tfidf_test_df, int_test_df, label_test_df, len(dict_index)
+
 
 
 if __name__ == '__main__':
@@ -310,55 +312,28 @@ if __name__ == '__main__':
     biden_train_tfidf_x, biden_train_int_x, biden_train_y, biden_test_tfidf_x, biden_test_int_x, biden_test_y, biden_vocab_size = DataPreprocessing(biden_train_df, biden_test_df)
     trump_train_tfidf_x, trump_train_int_x, trump_train_y, trump_test_tfidf_x, trump_test_int_x, trump_test_y, trump_vocab_size = DataPreprocessing(trump_train_df, trump_test_df)
 
-    total_train_tfidf_x, total_train_int_x, total_train_y, total_test_tfidf_x, total_test_int_x, total_test_y, total_vocab_size = DataPreprocessing(biden_train_df, biden_test_df)
+    total_train_tfidf_x, total_train_int_x, total_train_y, total_test_tfidf_x, total_test_int_x, total_test_y, total_vocab_size = DataPreprocessing(total_train_df, total_test_df)
 
 
-    # dan
-    biden_dan = DAN_train(biden_train_tfidf_x, biden_train_y, 30, 0.001)
-    torch.save(biden_dan, "biden_dan.pth")
-    trump_dan = DAN_train(trump_train_tfidf_x, trump_train_y, 30, 0.001)
-    torch.save(trump_dan, "trump_dan.pth")
-    total_dan = DAN_train(total_train_tfidf_x, total_train_y, 30, 0.001)
-    torch.save(total_dan, "total_dan.pth")
+    # testing dan with biden
+    dan_test_pred = pd.DataFrame()
+    dan_test_pred['label'] = dan_predict(biden_test_tfidf_x, 'biden_dan.pth')
+    correct = (dan_test_pred['label'] == biden_test_y['label']).sum()
 
-    # rnn
-    biden_rnn = RNN_train(biden_train_int_x, biden_train_y, 100, 0.0001, seqLength=25, vocab_size=biden_vocab_size)
-    torch.save(biden_rnn, "biden_rnn.pth")
-    trump_rnn = RNN_train(trump_train_int_x, trump_train_y, 100, 0.0001, seqLength=25, vocab_size=trump_vocab_size)
-    torch.save(trump_rnn, "trump_rnn.pth")
-    total_rnn = RNN_train(total_train_int_x, total_train_y, 100, 0.0001, seqLength=25, vocab_size=total_vocab_size)
-    torch.save(total_rnn, "total_rnn.pth")
+    print((correct / len(dan_test_pred)).item())
 
-
-
-    # if not os.path.isfile('biden_train_tfidf.csv'):
-    #     tfidf_df, int_df, label_train_df, tfidf_test_df, int_test_df, label_test_df = DataPreprocessing(train_df, test_df)
+    # # dan
+    # biden_dan = DAN_train(biden_train_tfidf_x, biden_train_y, 30, 0.001)
+    # torch.save(biden_dan, "biden_dan.pth")
+    # trump_dan = DAN_train(trump_train_tfidf_x, trump_train_y, 30, 0.001)
+    # torch.save(trump_dan, "trump_dan.pth")
+    # total_dan = DAN_train(total_train_tfidf_x, total_train_y, 30, 0.001)
+    # torch.save(total_dan, "total_dan.pth")
     #
-    #     tfidf_df.to_csv('biden_train_tfidf.csv')
-    #     int_df.to_csv('biden_train_int.csv')
-    #     label_train_df.to_csv('biden_train_label.csv')
-    #     tfidf_test_df.to_csv('biden_test_tfidf.csv')
-    #     int_test_df.to_csv('biden_test_int.csv')
-    #     label_test_df.to_csv('biden_test_label.csv')
-    # else:
-    #     tfidf_df = pd.read_csv('biden_train_tfidf.csv', index_col=0)
-    #     int_df = pd.read_csv('biden_train_int.csv', index_col=0)
-    #     temp_df = []
-    #     for x in int_df['intToken']:
-    #         temp = []
-    #         for s in x[1:-1].split(','):
-    #             temp.append(int(s))
-    #         temp_df.append(temp)
-    #     int_df['intToken'] = temp_df
-    #     label_train_df = pd.read_csv('biden_train_label.csv', index_col=0)
-    #
-    #     tfidf_test_df = pd.read_csv('biden_test_tfidf.csv', index_col=0)
-    #     int_test_df = pd.read_csv('biden_test_int.csv', index_col=0)
-    #     temp_df = []
-    #     for x in int_test_df['intToken']:
-    #         temp = []
-    #         for s in x[1:-1].split(','):
-    #             temp.append(int(s))
-    #         temp_df.append(temp)
-    #     int_test_df['intToken'] = temp_df
-    #     label_test_df = pd.read_csv('biden_test_label.csv', index_col=0)
+    # # rnn
+    # biden_rnn = RNN_train(biden_train_int_x, biden_train_y, 100, 0.0001, seqLength=25, vocab_size=biden_vocab_size)
+    # torch.save(biden_rnn, "biden_rnn.pth")
+    # trump_rnn = RNN_train(trump_train_int_x, trump_train_y, 100, 0.0001, seqLength=25, vocab_size=trump_vocab_size)
+    # torch.save(trump_rnn, "trump_rnn.pth")
+    # total_rnn = RNN_train(total_train_int_x, total_train_y, 100, 0.0001, seqLength=25, vocab_size=total_vocab_size)
+    # torch.save(total_rnn, "total_rnn.pth")
