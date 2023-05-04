@@ -16,7 +16,7 @@ if __name__ == '__main__':
         for word in sentence.split():
             temp_list.append(keys_to_index.get(word, num_words))
         X_embs_index[i, :len(temp_list)] = np.array(temp_list, np.int32)
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X_embs_index.astype(np.int32), y.astype(np.int32), test_size=0.3)
     X_val, X_test, y_val, y_test = train_test_split(X_test, y_test, test_size=0.5)
 
@@ -26,37 +26,20 @@ if __name__ == '__main__':
 
     temp_embs = np.concatenate([glove_embs, np.random.random((1, glove_embs.shape[-1])), np.zeros((1, glove_embs.shape[-1]))])
     model = LSTM_Model(num_words+2, 50, pretrained=torch.Tensor(temp_embs))
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-5)
-    loss_fn = torch.nn.BCELoss()
-    train_loss = []
-    val_loss = []
-    best_acc = 0
-    for epoch in tqdm(range(20)):
-        model.train()
-        losses = 0
-        for X, y in train_data:
-            optimizer.zero_grad()
-            outputs = model(X).flatten()
-            loss = loss_fn(outputs, y)
-            losses += loss.item()
-            loss.backward()
-            optimizer.step()
-            
 
-        train_loss.append(losses / len(train_data))
-        
-        model.eval()
-        losses = 0
-        corr = 0
-        with torch.no_grad():
-            for X, y in val_data:
+    model.load_state_dict(torch.load('model/lstm-pretrained.pt'))
+    model.eval()
+    corr = 0
+    losses = 0
+    loss_fn = torch.nn.BCELoss()
+    with torch.no_grad():
+            for X, y in test_data:
                 outputs = model(X).flatten()
                 loss = loss_fn(outputs, y)
                 losses += loss.item()
                 preds = np.where(outputs.numpy() > 0.5, 1, 0)
                 corr += sum(preds == y.numpy())
-            acc = corr / len(test_data.dataset)
-            val_loss.append(losses / len(val_data))
-            if acc > best_acc:
-                best_acc = acc
-                torch.save(model.state_dict(), 'model/lstm-pretrained.pt')
+
+    acc = corr / len(test_data.dataset)
+    print(f'Test Loss: {losses/len(test_data)}')
+    print(f'Accuracy: {acc}')
