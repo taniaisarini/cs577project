@@ -7,9 +7,12 @@ class LSTM_Model(torch.nn.Module):
             self.embeddings = torch.nn.Embedding.from_pretrained(pretrained)
         self.layer1 = torch.nn.LSTM(embedding_dim, 10, batch_first=True)
         self.layer2 = torch.nn.Linear(10, 1)
-    def forward(self, X):
+    def forward(self, X, embedded=False):
 #         print(X)
-        X, (_, _) = self.layer1(self.embeddings(X))
+        if(embedded):
+            X, (_, _) = self.layer1(X)
+        else:
+            X, (_, _) = self.layer1(self.embeddings(X))
         X = torch.nn.ReLU()(X[:, -1])
         X = torch.nn.Sigmoid()(self.layer2(X))
 #         print(X.size())

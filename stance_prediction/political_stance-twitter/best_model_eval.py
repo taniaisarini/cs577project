@@ -51,4 +51,5 @@ if __name__ == '__main__':
     loss_fn = torch.nn.BCELoss()
     with torch.no_grad():
             for X, y in test_data:
-                outputs = model(X.to(torch.long)).flatten()
+                # print(X)
+                outputs = model(X, True).flatten()
