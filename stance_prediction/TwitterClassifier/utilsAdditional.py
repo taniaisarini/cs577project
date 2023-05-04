@@ -3,7 +3,12 @@ import numpy as np
 import json
 import pandas as pd
 import re
+import torch
 
+from stance_prediction.TwitterClassifier.neural_archs import DAN
+from stance_prediction.TwitterClassifier.utils import DAN_Test_Dataset
+
+torch_device = torch.device("cpu")
 
 def computeIdf(d, dict_freq):
     dict_idf = dict()
@@ -83,5 +88,28 @@ def file_to_dan(dataset_path, dict_path):
 
     return tfidf_df
 
+def dan_predict(df, model_path):
+    model = DAN(vocab_size=df.shape[1], hidden_dim=250, output_size=3)
 
-# file_to_dan('', 'total_vocab.json')
+    # model.load_state_dict(torch.load(model_path))
+    try:
+        model.load_state_dict(torch.load(model_path))
+    except RuntimeError as e:
+        print('Ignoring "' + str(e) + '"')
+    model.eval()
+
+    dataset = DAN_Test_Dataset(data=df)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=64, shuffle=False)
+
+    test_pred = []
+
+    for i, item in enumerate(dataloader):
+        x = item.to(torch_device)
+        x = x.to(torch.float32)
+
+        output = model(x)
+
+        test_pred = test_pred + output.argmax(1).tolist()
+
+    return test_pred
+
