@@ -129,7 +129,8 @@ def main():
                         l_fn_model)
     utils.save_plots(train_accuracies, val_accuracies, train_losses, val_losses,
                      a_fn_plt, l_fn_plt)
-
+    print("highest train accuracy: {}".format(max(train_accuracies)))
+    print("highest val accuracy: {}".format(max(val_accuracies)))
 
 if __name__ == "__main__":
     # run data dump if running for the first time.

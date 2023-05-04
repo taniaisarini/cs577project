@@ -23,7 +23,9 @@ def category_to_num(category):
 
 
 class NewsDataset(Dataset):
-    def __init__(self, filename, perform_NER = True, use_twitter_classifier=False, DAN_df = None):
+    def __init__(self, filename, perform_NER = True, use_twitter_classifier=False, DAN_df = None,
+                 hyperpartisan = False):
+        self.hyperpartisan = hyperpartisan
         self.DAN_df = DAN_df
         self.use_twitter_classifier = use_twitter_classifier
         self.perform_NER = perform_NER
@@ -47,7 +49,7 @@ class NewsDataset(Dataset):
 
     def __getitem__(self, item):
         if self.use_twitter_classifier:
-            return self.DAN_df[item], self.all_labels[item]
+            return self.DAN_df.iloc[[item]], self.all_labels[item]
         else:
             return self.news_emb[item], self.all_labels[item]
 
@@ -88,11 +90,18 @@ class NewsDataset(Dataset):
 
             self.news_emb.append(x)
 
-            labels = torch.zeros(self.output_size)
-            if self.data[item]['bias'] == 0:
-                labels[0] = 1
+            if (self.hyperpartisan):
+                labels = torch.zeros(2)
+                if self.data[item]['hyperpartisan']:
+                    labels[0] = 1
+                else:
+                    labels[1] = 1
             else:
-                labels[1] = 1
+                labels = torch.zeros(self.output_size)
+                if self.data[item]['bias'] == 0:
+                    labels[0] = 1
+                else:
+                    labels[1] = 1
 
             self.all_labels.append(labels)
 

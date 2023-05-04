@@ -79,7 +79,7 @@ class NewsDataset(Dataset):
         max = 0
         for item in range(len(self.data)):
             # Get news paragraphs
-            para = self.remove_stop_words(self.data[item]["text"])
+            para = self.distill(self.data[item]["text"])
             self.text.append(para)
             if len(para) > max:
                 max = len(para)
